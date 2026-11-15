@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Temple Gap Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── CSS Variables (theme.css) ───────────────────────── */
+    :root {
+      --background: #ffffff;
+      --foreground: #1a1a1a;
+      --card: #ffffff;
+      --card-foreground: #1a1a1a;
+      --primary: #A41E35;
+      --primary-foreground: #ffffff;
+      --secondary: #fef2f4;
+      --secondary-foreground: #A41E35;
+      --muted: #f8f8f8;
+      --muted-foreground: #6b7280;
+      --accent: #fef2f4;
+      --accent-foreground: #A41E35;
+      --border: rgba(164,30,53,0.15);
+      --ring: #A41E35;
+      --radius: 0.75rem;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --font-body: 'DM Sans', sans-serif;
+      --font-display: 'DM Serif Display', serif;
+      --temple-gradient: linear-gradient(135deg,#A41E35 0%,#831729 100%);
+    }
+
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(135deg, var(--background) 0%, #fef2f4 40%, var(--background) 100%);
+      color: var(--foreground);
+      min-height: 100vh;
+    }
+
+    /* ── Animations (animations.css) ───────────────────── */
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeInLeft {
+      from { opacity:0; transform:translateX(-18px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity:0; transform:scale(0.92); }
+      to   { opacity:1; transform:scale(1); }
+    }
+    @keyframes shimmer {
+      0%   { background-position:-1000px 0; }
+      100% { background-position:1000px 0; }
+    }
+    @keyframes spin {
+      to { transform:rotate(360deg); }
+    }
+    @keyframes slideIn {
+      from { transform:translateX(120%); opacity:0; }
+      to   { transform:translateX(0); opacity:1; }
+    }
+    @keyframes slideOut {
+      from { transform:translateX(0); opacity:1; }
+      to   { transform:translateX(120%); opacity:0; }
+    }
+
+    .anim-fade-up  { animation: fadeInUp  0.45s ease-out both; }
+    .anim-fade-left{ animation: fadeInLeft 0.45s ease-out both; }
+    .anim-scale    { animation: scaleIn   0.35s ease-out both; }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .site-header {
+      background: var(--temple-gradient);
+      border-bottom: none;
+      box-shadow: 0 4px 24px rgba(164,30,53,0.25);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-brand { display:flex; align-items:center; gap:14px; }
+    .header-logo {
+      width:48px; height:48px;
+      background:#fff;
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-family: var(--font-display);
+      font-size:1.6rem; font-weight:700;
+      color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      flex-shrink:0;
+    }
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      color: #fff;
+      line-height:1.2;
+      display:flex; align-items:center; gap:8px;
+    }
+    .header-subtitle { font-size:.875rem; color:rgba(255,255,255,0.85); margin-top:2px; }
+    .sparkle { font-size:1.1rem; opacity:.85; }
+
+    /* Header action buttons */
+    .header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .btn-header {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size:.8rem; font-weight:600;
+      cursor:pointer;
+      transition: all .2s;
+      white-space:nowrap;
+    }
+    .btn-header:hover { background:rgba(255,255,255,0.25); border-color:rgba(255,255,255,.5); }
+
+    /* ── Container ──────────────────────────────────────── */
+    .container { max-width:1200px; margin:0 auto; padding:24px; }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .tabs-list {
+      display:inline-flex;
+      gap:4px;
+      background: var(--muted);
+      padding:4px;
+      border-radius:10px;
+      margin-bottom:24px;
+    }
+    .tab-trigger {
+      display:flex; align-items:center; gap:7px;
+      padding:9px 18px;
+      border:none; background:transparent;
+      font-family:var(--font-body); font-size:.9rem; font-weight:500;
+      color: var(--muted-foreground);
+      border-radius:8px; cursor:pointer;
+      transition: all .2s;
+    }
+    .tab-trigger.active {
+      background: #fff;
+      color: var(--foreground);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+    .tab-icon { font-size:1rem; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* ── Cards ──────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      overflow:hidden;
+      transition: box-shadow .2s;
+    }
+    .card:hover { box-shadow: 0 4px 16px rgba(164,30,53,0.08); }
+    .card-header {
+      padding: 18px 20px 0;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .card-header-gradient { background: linear-gradient(to right, rgba(164,30,53,.05), transparent); }
+    .card-title {
+      font-size:.95rem; font-weight:600;
+      color:var(--foreground);
+      display:flex; align-items:center; gap:8px;
+    }
+    .card-title .icon { color:var(--primary); font-size:1rem; }
+    .card-content { padding:20px; }
+
+    /* Stat cards */
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+    @media(max-width:640px){ .stats-grid{ grid-template-columns:1fr; } }
+
+    .stat-card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      border-left-width:4px;
+      padding:18px 20px;
+      transition: box-shadow .2s;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);
+    }
+    .stat-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    .stat-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .stat-card-label { font-size:.8rem; font-weight:600; color:var(--muted-foreground); }
+    .stat-card-icon {
+      width:36px; height:36px;
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1rem;
+    }
+    .stat-card-value { font-size:2rem; font-weight:700; line-height:1; }
+    .stat-card-sub { font-size:.75rem; color:var(--muted-foreground); margin-top:4px; }
+
+    .stat-primary   { border-left-color: var(--primary); }
+    .stat-primary .stat-card-value { color:var(--primary); }
+    .stat-primary .stat-card-icon  { background:rgba(164,30,53,.1); color:var(--primary); }
+
+    .stat-green     { border-left-color: var(--green); }
+    .stat-green .stat-card-value { color:var(--green); }
+    .stat-green .stat-card-icon  { background:rgba(16,185,129,.1); color:var(--green); }
+
+    .stat-amber     { border-left-color: var(--amber); }
+    .stat-amber .stat-card-value { color:var(--amber); }
+    .stat-amber .stat-card-icon  { background:rgba(245,158,11,.1); color:var(--amber); }
+
+    /* ── Day Selector ───────────────────────────────────── */
+    .day-selector { display:flex; flex-wrap:wrap; gap:10px; }
+    .day-btn {
+      min-width:110px;
+      padding:10px 14px;
+      border:1.5px solid var(--border);
+      background:#fff;
+      border-radius:10px;
+      cursor:pointer;
+      font-family:var(--font-body);
+      text-align:left;
+      transition: all .2s;
+    }
+    .day-btn:hover { box-shadow:0 4px 12px rgba(164,30,53,.1); border-color:rgba(164,30,53,.3); }
+    .day-btn.active {
+      background: var(--temple-gradient);
+      color:#fff;
+      border-color:transparent;
+      box-shadow:0 4px 16px rgba(164,30,53,.3);
+    }
+    .day-btn-name { font-weight:600; font-size:.95rem; margin-bottom:5px; }
+    .day-btn-badges { display:flex; gap:5px; flex-wrap:wrap; }
+    .badge {
+      display:inline-block; padding:2px 7px;
+      border-radius:999px; font-size:.7rem; font-weight:600;
+    }
+    .badge-default  { background:rgba(164,30,53,.12); color:var(--primary); }
+    .badge-green    { background:rgba(16,185,129,.12); color:#059669; }
+    .day-btn.active .badge-default { background:rgba(255,255,255,.25); color:#fff; }
+    .day-btn.active .badge-green   { background:rgba(255,255,255,.25); color:#fff; }
+
+    /* ── Main Grid ──────────────────────────────────────── */
+    .main-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    @media(max-width:900px){ .main-grid{ grid-template-columns:1fr; } }
+
+    /* ── Timeline ───────────────────────────────────────── */
+    .timeline { position:relative; }
+    .timeline-item {
+      display:flex; align-items:flex-start; gap:14px;
+      margin-bottom:6px;
+      cursor:pointer;
+    }
+    .timeline-spine {
+      display:flex; flex-direction:column; align-items:center;
+      width:20px; flex-shrink:0; padding-top:4px;
+    }
+    .timeline-dot {
+      width:12px; height:12px;
+      border-radius:50%; flex-shrink:0;
+      border:2px solid #fff;
+      box-shadow:0 0 0 2px currentColor;
+    }
+    .timeline-line {
+      width:2px; flex:1; background:var(--border);
+      min-height:20px; margin-top:3px;
+    }
+    .timeline-body {
+      flex:1; padding:12px 14px;
+      border-radius:10px; margin-bottom:10px;
+      transition: all .2s;
+    }
+    .timeline-body.is-class {
+      background:rgba(164,30,53,.06);
+      border:1px solid rgba(164,30,53,.15);
+    }
+    .timeline-body.is-gap {
+      background:rgba(16,185,129,.06);
+      border:1.5px dashed rgba(16,185,129,.3);
+      cursor:pointer;
+    }
+    .timeline-body.is-gap:hover {
+      background:rgba(16,185,129,.12);
+      border-color:rgba(16,185,129,.5);
+      transform:translateX(3px);
+    }
+    .timeline-body.is-gap.selected {
+      background:rgba(16,185,129,.15);
+      border-color:var(--green);
+      box-shadow:0 0 0 2px rgba(16,185,129,.2);
+    }
+    .tl-name { font-weight:600; font-size:.9rem; color:var(--foreground); margin-bottom:2px; }
+    .tl-time { font-size:.78rem; color:var(--muted-foreground); }
+    .tl-loc  { font-size:.78rem; color:var(--muted-foreground); margin-top:2px; }
+    .tl-gap-label {
+      font-size:.8rem; font-weight:600; color:var(--green);
+      display:flex; align-items:center; gap:5px;
+    }
+    .tl-gap-sub { font-size:.75rem; color:var(--muted-foreground); margin-top:2px; }
+    .tl-badge-row { margin-top:6px; display:flex; gap:5px; flex-wrap:wrap; }
+    .tl-badge {
+      font-size:.68rem; font-weight:600;
+      padding:2px 8px; border-radius:999px;
+    }
+    .tl-badge-class   { background:rgba(164,30,53,.1); color:var(--primary); }
+    .tl-badge-event   { background:rgba(245,158,11,.1); color:#b45309; }
+    .tl-badge-meeting { background:rgba(16,185,129,.1); color:#047857; }
+
+    /* ── Gap Detail Panel ───────────────────────────────── */
+    .gap-detail-card {
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      overflow:hidden;
+    }
+    .gap-detail-header {
+      background: linear-gradient(135deg,rgba(16,185,129,.12),rgba(16,185,129,.04));
+      padding:16px 20px;
+      border-bottom:1px solid rgba(16,185,129,.2);
+      display:flex; align-items:flex-start; justify-content:space-between;
+    }
+    .gap-detail-title { font-weight:700; font-size:1rem; color:var(--foreground); margin-bottom:4px; }
+    .gap-detail-meta  { font-size:.8rem; color:var(--muted-foreground); }
+    .gap-close-btn {
+      background:none; border:none; cursor:pointer;
+      font-size:1.3rem; color:var(--muted-foreground);
+      line-height:1; padding:2px 4px; border-radius:4px;
+      transition:.15s;
+    }
+    .gap-close-btn:hover { background:var(--muted); color:var(--foreground); }
+
+    .suggestion-group { margin-bottom:16px; }
+    .suggestion-group-title {
+      font-size:.8rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.06em; color:var(--muted-foreground);
+      margin-bottom:8px;
+    }
+    .suggestion-item {
+      padding:12px 14px;
+      border-radius:10px;
+      background:var(--muted);
+      border:1px solid var(--border);
+      margin-bottom:6px;
+      transition: all .15s;
+      cursor:default;
+    }
+    .suggestion-item:hover { background:var(--secondary); border-color:rgba(164,30,53,.2); }
+    .sug-name { font-weight:600; font-size:.88rem; color:var(--foreground); margin-bottom:3px; }
+    .sug-meta { font-size:.78rem; color:var(--muted-foreground); }
+
+    /* Quick gap overview */
+    .gap-overview-item {
+      padding:12px 14px;
+      border-radius:10px;
+      background:var(--muted);
+      margin-bottom:8px;
+      cursor:pointer;
+      transition: background .15s;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .gap-overview-item:hover { background:var(--accent); }
+    .gap-ov-left .gap-ov-title { font-size:.88rem; font-weight:600; color:var(--foreground); }
+    .gap-ov-left .gap-ov-sub   { font-size:.75rem; color:var(--muted-foreground); margin-top:2px; }
+    .badge-secondary {
+      background:var(--muted); color:var(--muted-foreground);
+      border:1px solid var(--border);
+      font-size:.75rem; font-weight:600;
+      padding:3px 9px; border-radius:999px;
+    }
+
+    /* ── Empty States ───────────────────────────────────── */
+    .empty-state {
+      text-align:center; padding:48px 20px;
+      color:var(--muted-foreground);
+    }
+    .empty-state-icon { font-size:3rem; opacity:.35; margin-bottom:12px; }
+    .empty-state p    { font-size:.95rem; }
+
+    /* ── Schedule Tab ───────────────────────────────────── */
+    .schedule-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:20px; flex-wrap:wrap; gap:12px;
+    }
+    .schedule-header h2 { font-size:1.2rem; font-weight:700; }
+
+    .type-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
+    .type-btn {
+      padding:10px; border:1.5px solid var(--border);
+      background:#fff; border-radius:10px; cursor:pointer;
+      font-family:var(--font-body); font-size:.85rem; font-weight:600;
+      color:var(--muted-foreground); text-align:center;
+      transition: all .2s;
+    }
+    .type-btn.active {
+      background: var(--temple-gradient); color:#fff; border-color:transparent;
+    }
+    .type-btn:hover:not(.active) { border-color:rgba(164,30,53,.3); color:var(--primary); }
+
+    /* Form */
+    .form-group { margin-bottom:16px; }
+    .form-label {
+      display:block; font-size:.85rem; font-weight:600;
+      color:var(--foreground); margin-bottom:6px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width:100%; padding:10px 14px;
+      border:1.5px solid var(--border);
+      border-radius:10px;
+      background:var(--muted);
+      font-family:var(--font-body); font-size:.9rem; color:var(--foreground);
+      transition: border-color .2s, box-shadow .2s;
+      outline:none;
+      appearance:none; -webkit-appearance:none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(164,30,53,.1);
+      background:#fff;
+    }
+    .form-textarea { resize:vertical; min-height:80px; }
+
+    .time-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .time-group { display:flex; align-items:center; gap:6px; }
+    .time-group .form-select { flex:1; }
+    .time-sep { font-size:1.2rem; font-weight:700; color:var(--muted-foreground); }
+    .time-ampm { flex:0 0 64px !important; }
+
+    /* Buttons */
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      padding:10px 18px;
+      border:none; border-radius:10px; cursor:pointer;
+      font-family:var(--font-body); font-size:.9rem; font-weight:600;
+      transition: all .2s;
+    }
+    .btn-primary {
+      background: var(--temple-gradient); color:#fff;
+      box-shadow:0 2px 8px rgba(164,30,53,.25);
+    }
+    .btn-primary:hover { box-shadow:0 6px 20px rgba(164,30,53,.35); transform:translateY(-1px); }
+    .btn-outline {
+      background:#fff; color:var(--primary);
+      border:1.5px solid var(--border);
+    }
+    .btn-outline:hover { border-color:var(--primary); background:var(--secondary); }
+    .btn-full { width:100%; }
+    .btn-sm { padding:6px 12px; font-size:.8rem; border-radius:7px; }
+
+    /* Schedule items list */
+    .sched-item {
+      padding:14px 16px;
+      border-radius:10px;
+      border:1.5px solid var(--border);
+      background:var(--muted);
+      margin-bottom:10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+      transition: all .2s;
+    }
+    .sched-item:hover { border-color:rgba(164,30,53,.25); background:var(--secondary); transform:translateX(4px); }
+    .sched-item-body { flex:1; min-width:0; }
+    .sched-item-name { font-weight:600; font-size:.9rem; color:var(--foreground); margin-bottom:3px; }
+    .sched-item-meta { font-size:.78rem; color:var(--muted-foreground); }
+    .sched-del-btn {
+      width:30px; height:30px; border-radius:50%;
+      background:#fee2e2; color:#dc2626; border:none; cursor:pointer;
+      font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+      transition: all .2s; flex-shrink:0;
+    }
+    .sched-del-btn:hover { background:#dc2626; color:#fff; transform:rotate(90deg); }
+
+    /* ── Map Tab ────────────────────────────────────────── */
+    .map-placeholder {
+      background: linear-gradient(135deg,#fef2f4,#fff);
+      border:2px dashed rgba(164,30,53,.2);
+      border-radius:12px;
+      padding:60px 20px;
+      text-align:center;
+      color:var(--muted-foreground);
+    }
+    .map-btn-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; justify-content:center; }
+    .map-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:20px; }
+    .map-bldg-card {
+      padding:14px 16px;
+      border:1.5px solid var(--border); border-radius:10px; background:#fff;
+      transition: all .15s;
+    }
+    .map-bldg-card:hover { border-color:var(--primary); box-shadow:0 4px 12px rgba(164,30,53,.1); }
+    .map-bldg-name { font-weight:600; font-size:.88rem; margin-bottom:4px; }
+    .map-bldg-link {
+      font-size:.78rem; color:var(--primary); text-decoration:none; font-weight:600;
+      display:inline-flex; align-items:center; gap:4px;
+    }
+    .map-bldg-link:hover { text-decoration:underline; }
+
+    /* ── Modals ─────────────────────────────────────────── */
+    .modal-backdrop {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
+      z-index:1000; align-items:center; justify-content:center;
+    }
+    .modal-backdrop.open { display:flex; }
+    .modal-box {
+      background:#fff; border-radius:16px;
+      max-width:520px; width:90%; max-height:85vh;
+      overflow-y:auto; padding:28px;
+      box-shadow:0 20px 60px rgba(0,0,0,.2);
+      animation: scaleIn .25s ease-out;
+    }
+    .modal-head {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .modal-title { font-size:1.15rem; font-weight:700; }
+    .modal-close {
+      background:none; border:none; font-size:1.5rem;
+      cursor:pointer; color:var(--muted-foreground); padding:0 4px;
+      transition:.15s; border-radius:4px;
+    }
+    .modal-close:hover { background:var(--muted); color:var(--foreground); }
+    .modal-sub { font-size:.85rem; color:var(--muted-foreground); margin-bottom:18px; }
+
+    /* Food card in modal */
+    .food-card {
+      background:linear-gradient(135deg,#10b981,#059669);
+      padding:18px; border-radius:12px; color:#fff; margin-bottom:12px;
+    }
+    .food-card-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
+    .food-card h3 { font-size:.95rem; font-weight:700; }
+    .food-pill {
+      padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:700;
+      background:rgba(255,255,255,.25); color:#fff; display:inline-block;
+    }
+    .food-meta { font-size:.8rem; opacity:.9; margin:2px 0; }
+    .food-options { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+    .food-opt { background:rgba(255,255,255,.2); padding:3px 9px; border-radius:8px; font-size:.74rem; }
+    .food-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .food-btn {
+      flex:1; padding:8px; border-radius:8px; font-size:.8rem; font-weight:700;
+      cursor:pointer; transition:.15s; border:none; font-family:var(--font-body);
+    }
+    .food-btn-main { background:#fff; color:#10b981; }
+    .food-btn-dir  { background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.4) !important; }
+
+    /* Service card */
+    .service-card {
+      background: var(--temple-gradient);
+      padding:18px; border-radius:12px; color:#fff; margin-bottom:12px;
+    }
+    .service-card h3 { font-weight:700; margin-bottom:6px; }
+    .service-meta { font-size:.82rem; opacity:.9; margin:2px 0; }
+    .service-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+    .service-tag { background:rgba(255,255,255,.2); padding:3px 9px; border-radius:8px; font-size:.74rem; }
+
+    /* Fitness card */
+    .fit-card {
+      background:linear-gradient(135deg,#f59e0b,#d97706);
+      padding:18px; border-radius:12px; color:#fff; margin-bottom:12px;
+    }
+    .fit-card h3 { font-weight:700; margin-bottom:6px; }
+    .fit-meta { font-size:.82rem; opacity:.9; margin:2px 0; }
+
+    /* Event card */
+    .event-card {
+      background:linear-gradient(135deg,#f59e0b,#d97706);
+      padding:18px; border-radius:12px; color:#fff; margin-bottom:12px;
+      cursor:pointer; transition:.2s;
+    }
+    .event-card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(245,158,11,.3); }
+    .event-card h3 { font-weight:700; margin-bottom:6px; }
+    .event-meta { font-size:.82rem; opacity:.9; margin:2px 0; }
+
+    /* Checkbox group */
+    .check-group { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .check-group input { accent-color:var(--primary); width:16px; height:16px; cursor:pointer; }
+    .check-group label { font-size:.9rem; font-weight:500; cursor:pointer; }
+
+    /* Filter bar */
+    .filter-bar { background:var(--muted); padding:14px; border-radius:10px; margin-bottom:16px; }
+    .filter-pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .filter-pill {
+      padding:6px 14px; border:1.5px solid var(--border); background:#fff;
+      border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer;
+      transition:.15s;
+    }
+    .filter-pill.active, .filter-pill:hover { border-color:var(--primary); color:var(--primary); background:var(--secondary); }
+
+    /* Toast */
+    .toast {
+      position:fixed; top:20px; right:20px; z-index:9999;
+      background:linear-gradient(135deg,#10b981,#059669);
+      color:#fff; padding:14px 20px; border-radius:12px;
+      box-shadow:0 10px 30px rgba(16,185,129,.3);
+      font-size:.9rem; font-weight:600; max-width:300px;
+      animation: slideIn .3s ease-out;
+    }
+    .toast.out { animation: slideOut .3s ease-out forwards; }
+
+    /* Spinner */
+    .spinner {
+      width:32px; height:32px; border:3px solid var(--border);
+      border-top-color:var(--primary); border-radius:50%;
+      animation: spin .8s linear infinite; margin:0 auto 12px;
+    }
+
+    /* Preferences panel (inline) */
+    .pref-section { margin-bottom:18px; }
+    .pref-section h4 { font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted-foreground); margin-bottom:10px; }
+
+    /* Responsive tweaks */
+    @media(max-width:640px){
+      .time-row { grid-template-columns:1fr; }
+      .header-actions { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-brand anim-fade-left">
+      <div class="header-logo">T</div>
+      <div>
+        <div class="header-title">Temple Gap Finder <span class="sparkle">✦</span></div>
+        <div class="header-subtitle">Maximize your free time on campus</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header" onclick="openModal('foodModal'); showFoodOptions()">🍔 Food</button>
+      <button class="btn-header" onclick="openModal('eventsModal'); renderEvents()">🎉 Events</button>
+      <button class="btn-header" onclick="openModal('servicesModal'); renderServices()">🏛️ Services</button>
+      <button class="btn-header" onclick="openModal('fitnessModal'); renderFitness()">💪 Fitness</button>
+      <button class="btn-header" onclick="openModal('dietaryModal')">⚙️ Food Filters</button>
+      <button class="btn-header" onclick="exportSchedule()">📤 Export</button>
+      <button class="btn-header" onclick="importSchedule()">📥 Import</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ MAIN -->
+<main class="container">
+
+  <!-- TABS -->
+  <div class="tabs-list anim-fade-up">
+    <button class="tab-trigger active" onclick="switchTab('dashboard',this)">
+      <span class="tab-icon">📅</span> Dashboard
+    </button>
+    <button class="tab-trigger" onclick="switchTab('schedule',this)">
+      <span class="tab-icon">🕐</span> My Schedule
+    </button>
+    <button class="tab-trigger" onclick="switchTab('map',this)">
+      <span class="tab-icon">📍</span> Campus Map
+    </button>
+  </div>
+
+  <!-- ──────────────────────── TAB: DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content active">
+
+    <!-- Stat cards -->
+    <div class="stats-grid">
+      <div class="stat-card stat-primary anim-scale" style="animation-delay:.05s">
+        <div class="stat-card-top">
+          <span class="stat-card-label">Classes Today</span>
+          <div class="stat-card-icon">📅</div>
+        </div>
+        <div class="stat-card-value" id="statClasses">0</div>
+        <div class="stat-card-sub" id="statClassesSub">on Monday</div>
+      </div>
+      <div class="stat-card stat-green anim-scale" style="animation-delay:.12s">
+        <div class="stat-card-top">
+          <span class="stat-card-label">Free Time Gaps</span>
+          <div class="stat-card-icon">🕐</div>
+        </div>
+        <div class="stat-card-value" id="statGaps">0</div>
+        <div class="stat-card-sub" id="statGapsSub">No gaps</div>
+      </div>
+      <div class="stat-card stat-amber anim-scale" style="animation-delay:.2s">
+        <div class="stat-card-top">
+          <span class="stat-card-label">Activity Options</span>
+          <div class="stat-card-icon">📈</div>
+        </div>
+        <div class="stat-card-value" id="statSuggs">0</div>
+        <div class="stat-card-sub">personalized suggestions</div>
+      </div>
+    </div>
+
+    <!-- Day selector card -->
+    <div class="card anim-fade-up" style="margin-bottom:24px;animation-delay:.1s">
+      <div class="card-header card-header-gradient" style="padding:16px 20px 12px">
+        <span class="card-title"><span class="icon">📅</span> Select Day</span>
+      </div>
+      <div class="card-content">
+        <div class="day-selector" id="daySelector"></div>
+      </div>
+    </div>
+
+    <!-- Schedule + Gap detail -->
+    <div class="main-grid anim-fade-up" style="animation-delay:.15s">
+      <!-- Left: Timeline -->
+      <div class="card">
+        <div class="card-header" style="padding:16px 20px 0">
+          <span class="card-title" id="timelineTitle">Monday's Schedule</span>
+        </div>
+        <div class="card-content">
+          <div id="timelineContainer"></div>
+        </div>
+      </div>
+
+      <!-- Right: Gap detail or quick overview -->
+      <div id="rightPanel"></div>
+    </div>
+  </div>
+
+  <!-- ──────────────────────── TAB: MY SCHEDULE -->
+  <div id="tab-schedule" class="tab-content">
+    <div class="card">
+      <div class="card-content">
+        <!-- Type selector -->
+        <div class="schedule-header">
+          <h2>➕ Add to Schedule</h2>
+          <div id="copyDayBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+
+        <div class="type-selector">
+          <button class="type-btn active" onclick="selectType('class',this)" id="type-class">📚 Class</button>
+          <button class="type-btn" onclick="selectType('event',this)" id="type-event">🎉 Event</button>
+          <button class="type-btn" onclick="selectType('meeting',this)" id="type-meeting">👥 Meeting</button>
+        </div>
+
+        <!-- Day selector (small) -->
+        <div class="form-group">
+          <label class="form-label">Day</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap" id="formDaySelector"></div>
+        </div>
+
+        <!-- Form -->
+        <form id="addForm" onsubmit="addItem(event)">
+          <div class="form-group">
+            <label class="form-label" id="nameLabel">Class Name</label>
+            <input class="form-input" id="itemName" placeholder="e.g., CIS 3296 – Software Design" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Time</label>
+            <div class="time-row">
+              <div>
+                <small style="color:var(--muted-foreground);display:block;margin-bottom:4px;font-size:.78rem">Start Time</small>
+                <div class="time-group">
+                  <select class="form-select" id="startHour"></select>
+                  <span class="time-sep">:</span>
+                  <select class="form-select" id="startMin"></select>
+                  <select class="form-select time-ampm" id="startAMPM">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <small style="color:var(--muted-foreground);display:block;margin-bottom:4px;font-size:.78rem">End Time</small>
+                <div class="time-group">
+                  <select class="form-select" id="endHour"></select>
+                  <span class="time-sep">:</span>
+                  <select class="form-select" id="endMin"></select>
+                  <select class="form-select time-ampm" id="endAMPM">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Location / Building</label>
+            <select class="form-select" id="building" required>
+              <option value="">Select location…</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="notesGroup" style="display:none">
+            <label class="form-label">Notes (Optional)</label>
+            <textarea class="form-textarea" id="notes" placeholder="Add any additional details…"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full" id="submitBtn">➕ Add Class</button>
+        </form>
+
+        <!-- Schedule list -->
+        <div style="margin-top:28px">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:14px" id="schedListTitle">Monday's Items</h3>
+          <div id="scheduleList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────────────── TAB: CAMPUS MAP -->
+  <div id="tab-map" class="tab-content">
+    <div class="card">
+      <div class="card-content">
+        <div class="map-placeholder">
+          <div style="font-size:3rem;margin-bottom:12px">🗺️</div>
+          <h3 style="font-size:1.1rem;font-weight:700;color:var(--foreground);margin-bottom:6px">Temple University Campus Map</h3>
+          <p style="font-size:.9rem">Click any building below to get directions on Google Maps</p>
+          <div class="map-btn-row">
+            <button class="btn btn-primary btn-sm" onclick="window.open('https://www.temple.edu/about/our-campuses/main-campus/main-campus-map','_blank')">🗺️ View Full Map</button>
+            <button class="btn btn-outline btn-sm" onclick="getMyLocation()">📍 Save My Location</button>
+          </div>
+        </div>
+        <div class="map-grid" id="buildingGrid"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════ MODALS -->
+
+<!-- Food -->
+<div class="modal-backdrop" id="foodModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">🍔 Food Options on Campus</span>
+      <button class="modal-close" onclick="closeModal('foodModal')">×</button>
+    </div>
+    <p class="modal-sub">Order ahead or find nearby food spots</p>
+    <div class="filter-bar">
+      <div class="filter-pills">
+        <button class="filter-pill active" onclick="setPriceFilter('all',this)">All Prices</button>
+        <button class="filter-pill" onclick="setPriceFilter('$',this)">$ Cheap</button>
+        <button class="filter-pill" onclick="setPriceFilter('$$',this)">$$ Mid</button>
+      </div>
+      <div class="check-group">
+        <input type="checkbox" id="mealPlanCheck" onchange="mealPlanOnly=this.checked;showFoodOptions()">
+        <label for="mealPlanCheck">Accepts Meal Plan Only</label>
+      </div>
+    </div>
+    <div id="foodList"></div>
+  </div>
+</div>
+
+<!-- Events -->
+<div class="modal-backdrop" id="eventsModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">🎉 Campus Events</span>
+      <button class="modal-close" onclick="closeModal('eventsModal')">×</button>
+    </div>
+    <p class="modal-sub">Live events from Temple NOW</p>
+    <button class="btn btn-outline btn-sm" style="margin-bottom:16px" onclick="renderEvents()">🔄 Refresh</button>
+    <div id="eventsList"></div>
+  </div>
+</div>
+
+<!-- Services -->
+<div class="modal-backdrop" id="servicesModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">🏛️ Campus Services</span>
+      <button class="modal-close" onclick="closeModal('servicesModal')">×</button>
+    </div>
+    <div id="servicesList"></div>
+  </div>
+</div>
+
+<!-- Fitness -->
+<div class="modal-backdrop" id="fitnessModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">💪 Group Fitness Classes</span>
+      <button class="modal-close" onclick="closeModal('fitnessModal')">×</button>
+    </div>
+    <p class="modal-sub">Weekly schedule from Campus Recreation</p>
+    <button class="btn btn-outline btn-sm" style="margin-bottom:16px" onclick="renderFitness()">🔄 Refresh</button>
+    <div id="fitnessList"></div>
+  </div>
+</div>
+
+<!-- Dietary -->
+<div class="modal-backdrop" id="dietaryModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">🍽️ Dietary Preferences</span>
+      <button class="modal-close" onclick="closeModal('dietaryModal')">×</button>
+    </div>
+    <p class="modal-sub">Select your dietary restrictions to filter food options</p>
+    <div id="dietaryChecks"></div>
+    <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="closeModal('dietaryModal');showFoodOptions()">Apply Filters</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SCRIPT -->
+<script>
+// ── Data ────────────────────────────────────────────────
+let schedule = {};
+let currentDay = 'Monday';
+let currentType = 'class';
+let userLocation = null;
+let priceFilter = 'all';
+let mealPlanOnly = false;
+let selectedGap = null;
+
+let dietaryPreferences = {
+  halal:false, kosher:false, vegetarian:false,
+  vegan:false, glutenFree:false, dairyFree:false
+};
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+
+const templeBuildings = [
+  "Anderson Hall","Annenberg Hall","Barton Hall","Beury Hall",
+  "Charles Library","Gladfelter Hall","Howard Gittis Student Center",
+  "Liacouras Center","Morgan Hall","Paley Library","Pearson Hall",
+  "Ritter Hall","SERC","Speakman Hall","Tuttleman Learning Center",
+  "Weiss Hall","Online/Zoom","Off Campus"
+];
+
+const buildingCoords = {
+  "Anderson Hall":"39.9812,-75.1556",
+  "Charles Library":"39.9813,-75.1551",
+  "SERC":"39.9805,-75.1550",
+  "Howard Gittis Student Center":"39.9810,-75.1555",
+  "Gladfelter Hall":"39.9815,-75.1560",
+  "Pearson Hall":"39.9807,-75.1558",
+  "Morgan Hall":"39.9808,-75.1553",
+  "Tuttleman Learning Center":"39.9816,-75.1549",
+  "Weiss Hall":"39.9806,-75.1557"
+};
+
+const foodPlaces = [
+  {name:"Student Center Food Court",type:"Food Court",location:"Howard Gittis Student Center",hours:"Mon-Fri: 7 AM – 8 PM",orderUrl:null,phone:"(215) 204-7944",options:["Chick-fil-A","Subway","Panda Express","Starbucks"],priceRange:"$",mealPlan:true,dietary:["halal","vegetarian"]},
+  {name:"Chipotle",type:"Mexican",location:"1837 Liacouras Walk",hours:"10:45 AM – 10 PM",orderUrl:"https://www.chipotle.com/order",phone:"(215) 787-9838",options:["Burritos","Bowls","Tacos"],priceRange:"$",mealPlan:false,dietary:["vegetarian","vegan","dairyFree","glutenFree"]},
+  {name:"Honeygrow",type:"Healthy/Stir-fry",location:"1801 Liacouras Walk",hours:"10:30 AM – 10 PM",orderUrl:"https://www.honeygrow.com/order/",phone:"(267) 639-3689",options:["Stir-fry","Salads","Honeybar"],priceRange:"$",mealPlan:false,dietary:["vegetarian","vegan","glutenFree","dairyFree"]},
+  {name:"Saxbys Coffee",type:"Coffee Shop",location:"Charles Library",hours:"Mon-Fri: 7 AM – 7 PM",orderUrl:"https://www.saxbyscoffee.com/mobile-app",phone:"(215) 204-9862",options:["Coffee","Pastries","Snacks"],priceRange:"$",mealPlan:true,dietary:["vegetarian"]},
+  {name:"Halal Cart (13th & Montgomery)",type:"Street Food",location:"13th & Montgomery",hours:"11 AM – 3 AM",orderUrl:null,phone:null,options:["Chicken over Rice","Lamb Gyro","Falafel"],priceRange:"$",mealPlan:false,dietary:["halal"]},
+  {name:"Shake Shack",type:"Burgers",location:"1500 Liacouras Walk",hours:"11 AM – 11 PM",orderUrl:"https://www.shakeshack.com/",phone:null,options:["Burgers","Fries","Shakes"],priceRange:"$$",mealPlan:false,dietary:["vegetarian"]},
+  {name:"Starbucks",type:"Coffee",location:"Student Center",hours:"Mon-Fri: 7 AM – 8 PM",orderUrl:"https://www.starbucks.com/",phone:null,options:["Coffee","Tea","Sandwiches"],priceRange:"$$",mealPlan:true,dietary:["vegetarian","vegan","dairyFree"]},
+  {name:"Qdoba",type:"Mexican",location:"Student Center",hours:"Mon-Fri: 10 AM – 8 PM",orderUrl:"https://www.qdoba.com/order",phone:null,options:["Burritos","Bowls","Quesadillas"],priceRange:"$",mealPlan:true,dietary:["vegetarian","vegan","dairyFree","glutenFree"]},
+  {name:"Insomnia Cookies",type:"Dessert",location:"1900 N 13th St",hours:"11 AM – 3 AM",orderUrl:"https://insomniacookies.com/",phone:"(215) 291-9448",options:["Cookies","Ice Cream","Brownies"],priceRange:"$",mealPlan:false,dietary:["vegetarian"]},
+  {name:"Saladworks",type:"Salads/Healthy",location:"Student Center",hours:"Mon-Fri: 10 AM – 7 PM",orderUrl:"https://www.saladworks.com/",phone:null,options:["Salads","Wraps","Grain Bowls"],priceRange:"$",mealPlan:true,dietary:["vegetarian","vegan","glutenFree","dairyFree"]},
+];
+
+const campusServices = [
+  {name:"Career Center",description:"Resume help, interview prep, job search",location:"Mitten Hall, 3rd Floor",hours:"Mon-Fri: 9 AM – 5 PM",bookingUrl:"https://temple.joinhandshake.com/",phone:"(215) 204-7676",services:["Resume Reviews","Mock Interviews","Career Counseling","Job Search"]},
+  {name:"Counseling Services",description:"Mental health support & wellness resources",location:"Tuttleman Counseling Services",hours:"Mon-Fri: 8:30 AM – 5 PM",bookingUrl:"https://studentaffairs.temple.edu/counseling",phone:"(215) 204-7276",services:["Individual Therapy","Group Therapy","Crisis Support"]},
+  {name:"Writing Center",description:"Free writing tutoring for all students",location:"Anderson Hall, 4th Floor",hours:"Mon-Thu: 10 AM – 6 PM, Fri: 10 AM – 2 PM",bookingUrl:"https://writingcenter.temple.edu/",phone:"(215) 204-5039",services:["Essay Help","Grammar Review","Citation Assistance"]},
+];
+
+const fitnessClasses = [
+  {name:"Yoga Flow",time:"Mon/Wed: 6:00 PM",location:"Pearson Hall Studio"},
+  {name:"HIIT Training",time:"Tue/Thu: 7:00 AM",location:"IBC Fitness Center"},
+  {name:"Spin Class",time:"Mon/Wed/Fri: 5:30 PM",location:"IBC Cycle Studio"},
+  {name:"Zumba",time:"Tue/Thu: 6:30 PM",location:"Pearson Hall Studio"},
+  {name:"Pilates",time:"Wed/Fri: 12:00 PM",location:"Pearson Hall Studio"},
+  {name:"Kickboxing",time:"Mon/Wed: 7:00 PM",location:"IBC Fitness Center"},
+  {name:"Barre",time:"Tue/Thu: 5:00 PM",location:"Pearson Hall Studio"},
+  {name:"Boot Camp",time:"Mon/Wed/Fri: 6:00 AM",location:"IBC Fitness Center"},
+  {name:"View Full Schedule",time:"Updated Weekly",location:"Temple Campus Recreation",url:"https://www.temple.edu/campus-recreation/fitness-wellness/group-fitness/group-fitness-schedule"},
+];
+
+const campusEvents = [
+  {name:"Visit Temple NOW for Live Events",date:"Daily Updates",time:"Various times",location:"Temple Campus",description:"Click View Details to see current campus events",url:"https://now.temple.edu/events"},
+];
+
+const dietaryLabels = {halal:"🕌 Halal",kosher:"✡️ Kosher",vegetarian:"🥗 Vegetarian",vegan:"🌱 Vegan",glutenFree:"🌾 Gluten-Free",dairyFree:"🥛 Dairy-Free"};
+
+// ── Helpers ──────────────────────────────────────────────
+function timeToMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+function to24(h,m,ap){ let n=parseInt(h); if(ap==='PM'&&n!==12)n+=12; if(ap==='AM'&&n===12)n=0; return `${n.toString().padStart(2,'0')}:${m}`; }
+function to12(t24){ const [h,m]=t24.split(':'); let n=parseInt(h); const ap=n>=12?'PM':'AM'; if(n>12)n-=12; if(n===0)n=12; return `${n}:${m} ${ap}`; }
+
+function saveData(){ localStorage.setItem('templeSchedulePro',JSON.stringify(schedule)); }
+function loadData(){
+  const s=localStorage.getItem('templeSchedulePro');
+  if(s){ try{ schedule=JSON.parse(s); }catch(e){ schedule={}; } }
+}
+
+function findGaps(){
+  const items=(schedule[currentDay]||[]).filter(i=>i.start&&i.end);
+  if(items.length<2) return [];
+  const sorted=[...items].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+  const gaps=[];
+  for(let i=0;i<sorted.length-1;i++){
+    const gapMin=timeToMin(sorted[i+1].start)-timeToMin(sorted[i].end);
+    if(gapMin>=15){
+      gaps.push({
+        id:`gap-${i}`,
+        start:sorted[i].end, end:sorted[i+1].start, duration:gapMin,
+        afterItem:sorted[i].name, beforeItem:sorted[i+1].name,
+        fromBuilding:sorted[i].building, toBuilding:sorted[i+1].building
+      });
+    }
+  }
+  return gaps;
+}
+
+function getSuggestions(gap){
+  const h=parseInt(gap.start.split(':')[0]);
+  const suggestions=[];
+  if(h>=11&&h<=14&&gap.duration>=30){
+    suggestions.push({category:'🍽️ Lunch Time',items:[
+      {name:"Student Center Food Court",location:"Howard Gittis",distance:"2 min walk",details:"Great time for a meal break"},
+      {name:"Honeygrow",location:"Liacouras Walk",distance:"5 min walk",details:"Healthy, quick options"},
+      {name:"Chipotle",location:"Liacouras Walk",distance:"4 min walk",details:"Quick & filling"},
+    ]});
+  }
+  if(gap.duration>=60){
+    suggestions.push({category:'📚 Study Session',items:[
+      {name:"Charles Library",location:"Main Campus",distance:"3 min walk",details:"Quiet study floors + coffee"},
+      {name:"SERC Study Rooms",location:"SERC Building",distance:"4 min walk",details:"Bookable collaborative spaces"},
+    ]});
+  }
+  if(gap.duration>=30){
+    suggestions.push({category:'☕ Coffee',items:[
+      {name:"Saxbys at Charles Library",location:"Charles Library",distance:"3 min",details:"Coffee + study space combo"},
+      {name:"Quick review session",location:"Nearest building",distance:"1 min",details:"Go over your notes"},
+    ]});
+  }
+  if(gap.duration<30){
+    suggestions.push({category:'⚡ Quick Break',items:[
+      {name:"Head to next class early",location:gap.toBuilding,distance:"varies",details:"Claim a good seat"},
+      {name:"Water & stretch break",location:"Current building",distance:"1 min",details:"Stay refreshed & energized"},
+    ]});
+  }
+  return suggestions;
+}
+
+// ── Tabs ─────────────────────────────────────────────────
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-trigger').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='schedule') renderFormDaySelector();
+}
+
+// ── Day selectors ─────────────────────────────────────────
+function renderDaySelector(){
+  const container=document.getElementById('daySelector');
+  container.innerHTML='';
+  DAYS.forEach(day=>{
+    const items=(schedule[day]||[]);
+    const gaps=findGapsForDay(day);
+    const isActive=day===currentDay;
+    const badgesHtml=`
+      ${items.length>0?`<span class="badge badge-default">${items.length} class${items.length>1?'es':''}</span>`:''}
+      ${gaps>0?`<span class="badge badge-green">${gaps} gap${gaps>1?'s':''}</span>`:''}
+    `;
+    const btn=document.createElement('button');
+    btn.className='day-btn'+(isActive?' active':'');
+    btn.innerHTML=`<div class="day-btn-name">${day.slice(0,3)}</div><div class="day-btn-badges">${badgesHtml}</div>`;
+    btn.onclick=()=>{ currentDay=day; selectedGap=null; updateAll(); };
+    container.appendChild(btn);
+  });
+}
+
+function findGapsForDay(day){
+  const items=(schedule[day]||[]).filter(i=>i.start&&i.end);
+  if(items.length<2) return 0;
+  const sorted=[...items].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+  let count=0;
+  for(let i=0;i<sorted.length-1;i++){
+    if(timeToMin(sorted[i+1].start)-timeToMin(sorted[i].end)>=15) count++;
+  }
+  return count;
+}
+
+function renderFormDaySelector(){
+  const container=document.getElementById('formDaySelector');
+  container.innerHTML='';
+  DAYS.forEach(day=>{
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='day-btn'+(day===currentDay?' active':'');
+    btn.style.minWidth='64px';
+    btn.style.padding='6px 10px';
+    btn.innerHTML=`<div class="day-btn-name">${day.slice(0,3)}</div>`;
+    btn.onclick=()=>{ currentDay=day; renderFormDaySelector(); renderScheduleList(); renderDaySelector(); renderTimeline(); renderStats(); };
+    container.appendChild(btn);
+  });
+  document.getElementById('schedListTitle').textContent=`${currentDay}'s Items`;
+}
+
+// ── Stats ─────────────────────────────────────────────────
+function renderStats(){
+  const todayItems=(schedule[currentDay]||[]);
+  const gaps=findGaps();
+  const suggs=gaps.reduce((s,g)=>s+getSuggestions(g).reduce((a,c)=>a+c.items.length,0),0);
+  const totalMin=gaps.reduce((s,g)=>s+g.duration,0);
+  document.getElementById('statClasses').textContent=todayItems.length;
+  document.getElementById('statClassesSub').textContent=`on ${currentDay}`;
+  document.getElementById('statGaps').textContent=gaps.length;
+  document.getElementById('statGapsSub').textContent=totalMin>0?`${Math.floor(totalMin/60)}h ${totalMin%60}m total`:'No gaps';
+  document.getElementById('statSuggs').textContent=suggs;
+}
+
+// ── Timeline ──────────────────────────────────────────────
+function renderTimeline(){
+  document.getElementById('timelineTitle').textContent=`${currentDay}'s Schedule`;
+  const container=document.getElementById('timelineContainer');
+  const items=(schedule[currentDay]||[]);
+  const gaps=findGaps();
+
+  if(items.length===0){
+    container.innerHTML=`<div class="empty-state"><div class="empty-state-icon">📅</div><p>No classes scheduled for ${currentDay}</p></div>`;
+    renderRightPanel();
+    return;
+  }
+
+  const sorted=[...items].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+  const typeIcons={class:'📚',event:'🎉',meeting:'👥'};
+  const typeBadge={class:'tl-badge-class',event:'tl-badge-event',meeting:'tl-badge-meeting'};
+
+  // Build merged list: classes + gaps
+  let merged=[];
+  sorted.forEach((item,i)=>{
+    merged.push({kind:'class',item});
+    // insert gap after this item?
+    const gap=gaps.find(g=>g.afterItem===item.name&&g.start===item.end);
+    if(gap) merged.push({kind:'gap',gap});
+  });
+
+  container.innerHTML=merged.map((entry,i)=>{
+    if(entry.kind==='class'){
+      const it=entry.item;
+      const isLast=i===merged.length-1;
+      return `
+        <div class="timeline-item">
+          <div class="timeline-spine">
+            <div class="timeline-dot" style="color:var(--primary)"></div>
+            ${!isLast?`<div class="timeline-line"></div>`:''}
+          </div>
+          <div class="timeline-body is-class">
+            <div class="tl-name">${typeIcons[it.type]||'📚'} ${it.name}</div>
+            <div class="tl-time">🕐 ${to12(it.start)} – ${to12(it.end)}</div>
+            <div class="tl-loc">📍 ${it.building}</div>
+            ${it.notes?`<div class="tl-loc" style="margin-top:4px">💭 ${it.notes}</div>`:''}
+            <div class="tl-badge-row">
+              <span class="tl-badge ${typeBadge[it.type]||'tl-badge-class'}">${(it.type||'class').toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      const g=entry.gap;
+      const isSelected=selectedGap&&selectedGap.id===g.id;
+      return `
+        <div class="timeline-item" onclick="selectGap('${g.id}')">
+          <div class="timeline-spine">
+            <div class="timeline-dot" style="color:var(--green)"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="timeline-body is-gap${isSelected?' selected':''}">
+            <div class="tl-gap-label">⚡ ${g.duration} minute free gap</div>
+            <div class="tl-gap-sub">${to12(g.start)} – ${to12(g.end)}</div>
+            <div class="tl-gap-sub" style="margin-top:3px;font-style:italic">Click to see suggestions →</div>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  renderRightPanel();
+}
+
+function selectGap(gapId){
+  const gaps=findGaps();
+  selectedGap=gaps.find(g=>g.id===gapId)||null;
+  renderTimeline();
+}
+
+function renderRightPanel(){
+  const container=document.getElementById('rightPanel');
+  const gaps=findGaps();
+
+  if(selectedGap){
+    const suggs=getSuggestions(selectedGap);
+    const suggHtml=suggs.map(s=>`
+      <div class="suggestion-group">
+        <div class="suggestion-group-title">${s.category}</div>
+        ${s.items.map(it=>`
+          <div class="suggestion-item">
+            <div class="sug-name">${it.name}</div>
+            <div class="sug-meta">📍 ${it.location}${it.distance?` · 🚶 ${it.distance}`:''}</div>
+            <div class="sug-meta" style="font-style:italic;margin-top:2px">${it.details}</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    container.innerHTML=`
+      <div class="gap-detail-card">
+        <div class="gap-detail-header">
+          <div>
+            <div class="gap-detail-title">⚡ ${selectedGap.duration} Minute Gap</div>
+            <div class="gap-detail-meta">
+              🕐 ${to12(selectedGap.start)} – ${to12(selectedGap.end)}<br>
+              Between: ${selectedGap.afterItem} → ${selectedGap.beforeItem}<br>
+              📍 ${selectedGap.fromBuilding} → ${selectedGap.toBuilding}
+            </div>
+          </div>
+          <button class="gap-close-btn" onclick="selectedGap=null;renderTimeline()">×</button>
+        </div>
+        <div class="card-content">${suggHtml}</div>
+      </div>
+    `;
+  } else if(gaps.length>0){
+    const overviewItems=gaps.map((g,i)=>`
+      <div class="gap-overview-item" onclick="selectedGap=findGaps()[${i}];renderTimeline()">
+        <div class="gap-ov-left">
+          <div class="gap-ov-title">Gap ${i+1}</div>
+          <div class="gap-ov-sub">${getSuggestions(g).reduce((a,c)=>a+c.items.length,0)} activities nearby</div>
+        </div>
+        <span class="badge-secondary">${Math.floor(g.duration/60)>0?Math.floor(g.duration/60)+'h ':''}${g.duration%60}m</span>
+      </div>
+    `).join('');
+
+    container.innerHTML=`
+      <div class="card">
+        <div class="card-header" style="padding:16px 20px 0">
+          <span class="card-title">Quick Gap Overview</span>
+        </div>
+        <div class="card-content">${overviewItems}</div>
+      </div>
+    `;
+  } else {
+    container.innerHTML=`
+      <div class="card">
+        <div class="card-content">
+          <div class="empty-state">
+            <div class="empty-state-icon">🕐</div>
+            <p>Click on a free time gap to see activity suggestions</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// ── Schedule list ─────────────────────────────────────────
+function renderScheduleList(){
+  const container=document.getElementById('scheduleList');
+  const items=schedule[currentDay]||[];
+  if(items.length===0){
+    container.innerHTML=`<div class="empty-state" style="padding:24px"><p>No items for ${currentDay}. Add one above!</p></div>`;
+    return;
+  }
+  const sorted=[...items].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+  const typeIcons={class:'📚',event:'🎉',meeting:'👥'};
+  container.innerHTML=sorted.map(item=>{
+    const realIdx=items.indexOf(item);
+    return `
+      <div class="sched-item">
+        <div class="sched-item-body">
+          <div class="sched-item-name">${typeIcons[item.type]||'📚'} ${item.name}</div>
+          <div class="sched-item-meta">🕐 ${to12(item.start)} – ${to12(item.end)} &nbsp;·&nbsp; 📍 ${item.building}</div>
+          ${item.notes?`<div class="sched-item-meta" style="font-style:italic;margin-top:3px">💭 ${item.notes}</div>`:''}
+        </div>
+        <button class="sched-del-btn" onclick="deleteItem('${currentDay}',${realIdx})" title="Delete">×</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Form helpers ──────────────────────────────────────────
+function populateTimeSelects(){
+  const hours=['1','2','3','4','5','6','7','8','9','10','11','12'];
+  const mins=Array.from({length:60},(_,i)=>i.toString().padStart(2,'0'));
+  ['startHour','endHour'].forEach(id=>{
+    const s=document.getElementById(id);
+    hours.forEach(h=>{ const o=document.createElement('option'); o.value=h; o.textContent=h; s.appendChild(o); });
+  });
+  ['startMin','endMin'].forEach(id=>{
+    const s=document.getElementById(id);
+    mins.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; s.appendChild(o); });
+  });
+  document.getElementById('startHour').value='9';
+  document.getElementById('startMin').value='00';
+  document.getElementById('startAMPM').value='AM';
+  document.getElementById('endHour').value='10';
+  document.getElementById('endMin').value='50';
+  document.getElementById('endAMPM').value='AM';
+}
+
+function populateBuildings(){
+  const sel=document.getElementById('building');
+  templeBuildings.forEach(b=>{ const o=document.createElement('option'); o.value=b; o.textContent=b; sel.appendChild(o); });
+}
+
+function populateBuildingGrid(){
+  const g=document.getElementById('buildingGrid');
+  templeBuildings.filter(b=>b!=='Online/Zoom'&&b!=='Off Campus').forEach(b=>{
+    const div=document.createElement('div');
+    div.className='map-bldg-card';
+    div.innerHTML=`
+      <div class="map-bldg-name">📍 ${b}</div>
+      <a class="map-bldg-link" href="javascript:openMaps('${b}')">Get Directions →</a>
+    `;
+    g.appendChild(div);
+  });
+}
+
+function selectType(type, btn){
+  currentType=type;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels={class:'Class Name',event:'Event Name',meeting:'Meeting Title'};
+  const btnText={class:'➕ Add Class',event:'➕ Add Event',meeting:'➕ Add Meeting'};
+  document.getElementById('nameLabel').textContent=labels[type];
+  document.getElementById('submitBtn').textContent=btnText[type];
+  document.getElementById('notesGroup').style.display=type!=='class'?'block':'none';
+}
+
+// ── Add / Delete ──────────────────────────────────────────
+function addItem(e){
+  e.preventDefault();
+  const start24=to24(document.getElementById('startHour').value,document.getElementById('startMin').value,document.getElementById('startAMPM').value);
+  const end24=to24(document.getElementById('endHour').value,document.getElementById('endMin').value,document.getElementById('endAMPM').value);
+  if(timeToMin(end24)<=timeToMin(start24)){ alert('End time must be after start time!'); return; }
+  const item={
+    name:document.getElementById('itemName').value,
+    start:start24, end:end24,
+    building:document.getElementById('building').value,
+    type:currentType,
+    notes:document.getElementById('notes').value||''
+  };
+  if(!schedule[currentDay]) schedule[currentDay]=[];
+  schedule[currentDay].push(item);
+  saveData();
+  e.target.reset();
+  document.getElementById('startHour').value='9';
+  document.getElementById('startMin').value='00';
+  document.getElementById('endHour').value='10';
+  document.getElementById('endMin').value='50';
+  updateAll();
+  showToast(`✅ ${item.name} added to ${currentDay}!`);
+}
+
+function deleteItem(day,idx){
+  if(!confirm('Delete this item?')) return;
+  schedule[day].splice(idx,1);
+  saveData();
+  updateAll();
+}
+
+// ── Maps ──────────────────────────────────────────────────
+function openMaps(building){
+  const coords=buildingCoords[building];
+  if(coords){
+    const url=userLocation
+      ?`https://www.google.com/maps/dir/${userLocation}/${coords}`
+      :`https://www.google.com/maps/search/?api=1&query=${coords}`;
+    window.open(url,'_blank');
+  } else {
+    window.open(`https://www.google.com/maps/search/?api=1&query=Temple+University+${encodeURIComponent(building)}`, '_blank');
+  }
+}
+
+function getMyLocation(){
+  if(!navigator.geolocation){ alert('Geolocation not supported.'); return; }
+  navigator.geolocation.getCurrentPosition(
+    p=>{ userLocation=`${p.coords.latitude},${p.coords.longitude}`; showToast('📍 Location saved! Directions are now personalized.'); },
+    ()=>alert('Could not get location. Enable location services.')
+  );
+}
+
+// ── Export / Import ───────────────────────────────────────
+function exportSchedule(){
+  const blob=new Blob([JSON.stringify(schedule,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='temple-schedule.json'; a.click();
+}
+function importSchedule(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange=e=>{
+    const r=new FileReader();
+    r.onload=ev=>{ try{ schedule=JSON.parse(ev.target.result); saveData(); updateAll(); showToast('✅ Schedule imported!'); }catch(err){ alert('Import failed.'); } };
+    r.readAsText(e.target.files[0]);
+  };
+  inp.click();
+}
+
+// ── Modals ────────────────────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// click backdrop to close
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── Food ──────────────────────────────────────────────────
+function setPriceFilter(val,btn){
+  priceFilter=val;
+  document.querySelectorAll('#foodModal .filter-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  showFoodOptions();
+}
+
+function showFoodOptions(){
+  const activeDietary=Object.keys(dietaryPreferences).filter(k=>dietaryPreferences[k]);
+  let filtered=foodPlaces.filter(p=>{
+    if(priceFilter!=='all'&&p.priceRange!==priceFilter) return false;
+    if(mealPlanOnly&&!p.mealPlan) return false;
+    if(activeDietary.length>0) return activeDietary.some(d=>p.dietary&&p.dietary.includes(d));
+    return true;
+  });
+
+  const container=document.getElementById('foodList');
+  if(!filtered.length){
+    container.innerHTML=`<div style="text-align:center;padding:32px;color:var(--muted-foreground)">No results match your filters.</div>`;
+    return;
+  }
+
+  container.innerHTML=filtered.map(p=>`
+    <div class="food-card">
+      <div class="food-card-head">
+        <h3>${p.name}</h3>
+        <div style="display:flex;gap:5px;align-items:center">
+          <span class="food-pill">${p.priceRange}</span>
+          ${p.mealPlan?'<span class="food-pill" style="background:rgba(255,215,0,.8);color:#1a1a1a">💳 Meal Plan</span>':''}
+        </div>
+      </div>
+      <div class="food-meta">📍 ${p.location}</div>
+      <div class="food-meta">🕐 ${p.hours}</div>
+      ${p.phone?`<div class="food-meta">📞 ${p.phone}</div>`:''}
+      <div class="food-options">${p.options.map(o=>`<span class="food-opt">${o}</span>`).join('')}</div>
+      <div class="food-actions">
+        ${p.orderUrl
+          ?`<button class="food-btn food-btn-main" onclick="window.open('${p.orderUrl}','_blank')">🍔 Order Ahead</button>`
+          :`<button class="food-btn food-btn-main" disabled style="opacity:.6;cursor:not-allowed">Walk-in Only</button>`}
+        <button class="food-btn food-btn-dir" onclick="openMaps('${p.location}')">🗺️ Directions</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Events ───────────────────────────────────────────────
+function renderEvents(){
+  const c=document.getElementById('eventsList');
+  c.innerHTML=campusEvents.map(ev=>`
+    <div class="event-card">
+      <h3>${ev.name}</h3>
+      <div class="event-meta">📅 ${ev.date}</div>
+      <div class="event-meta">🕐 ${ev.time}</div>
+      <div class="event-meta">📍 ${ev.location}</div>
+      <p style="margin-top:8px;font-size:.82rem;opacity:.9">${ev.description}</p>
+      ${ev.url?`<button onclick="window.open('${ev.url}','_blank')" style="margin-top:12px;background:#fff;color:#f59e0b;border:none;padding:7px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.82rem">🔗 View Details</button>`:''}
+    </div>
+  `).join('');
+}
+
+// ── Services ─────────────────────────────────────────────
+function renderServices(){
+  const c=document.getElementById('servicesList');
+  c.innerHTML=campusServices.map(s=>`
+    <div class="service-card">
+      <h3>${s.name}</h3>
+      <p style="opacity:.9;margin-bottom:8px;font-size:.85rem">${s.description}</p>
+      <div class="service-meta">📍 ${s.location}</div>
+      <div class="service-meta">🕐 ${s.hours}</div>
+      ${s.phone?`<div class="service-meta">📞 ${s.phone}</div>`:''}
+      <div class="service-tags">${s.services.map(sv=>`<span class="service-tag">${sv}</span>`).join('')}</div>
+      <button onclick="window.open('${s.bookingUrl}','_blank')" style="margin-top:14px;background:#fff;color:var(--primary);border:none;padding:9px 0;border-radius:10px;cursor:pointer;font-weight:700;font-size:.85rem;width:100%">📅 Book Appointment</button>
+    </div>
+  `).join('');
+}
+
+// ── Fitness ───────────────────────────────────────────────
+function renderFitness(){
+  const c=document.getElementById('fitnessList');
+  c.innerHTML=fitnessClasses.map(f=>`
+    <div class="fit-card">
+      <h3>${f.name}</h3>
+      <div class="fit-meta">🕐 ${f.time}</div>
+      <div class="fit-meta">📍 ${f.location}</div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        ${f.url
+          ?`<button onclick="window.open('${f.url}','_blank')" style="flex:1;background:#fff;color:#f59e0b;border:none;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.8rem">📅 View Full Schedule</button>`
+          :`<button onclick="prefillForm('${f.name.replace(/'/g,"\\'")}','${f.location.replace(/'/g,"\\'")}')" style="flex:1;background:#fff;color:#f59e0b;border:none;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.8rem">➕ Add to Schedule</button>
+           <button onclick="openMaps('${f.location}')" style="background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.4);padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.8rem">🗺️</button>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Dietary modal ─────────────────────────────────────────
+function renderDietaryModal(){
+  const c=document.getElementById('dietaryChecks');
+  c.innerHTML=Object.keys(dietaryPreferences).map(k=>`
+    <div class="check-group">
+      <input type="checkbox" id="pref-${k}" ${dietaryPreferences[k]?'checked':''}
+        onchange="dietaryPreferences['${k}']=this.checked">
+      <label for="pref-${k}">${dietaryLabels[k]}</label>
+    </div>
+  `).join('');
+}
+
+// ── Pre-fill form from modal ──────────────────────────────
+function prefillForm(name, location){
+  closeModal('fitnessModal');
+  document.querySelectorAll('.tab-trigger').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-trigger')[1].classList.add('active');
+  document.getElementById('tab-schedule').classList.add('active');
+  renderFormDaySelector();
+  selectType('event', document.getElementById('type-event'));
+  document.getElementById('itemName').value=name;
+  const sel=document.getElementById('building');
+  for(let opt of sel.options){
+    if(location.toLowerCase().includes(opt.value.toLowerCase())||opt.value.toLowerCase().includes(location.toLowerCase())){
+      sel.value=opt.value; break;
+    }
+  }
+  document.getElementById('itemName').scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('itemName').focus();
+  showToast('✅ Event pre-filled! Set the time and add it.');
+}
+
+// ── Toast ─────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.createElement('div');
+  t.className='toast'; t.innerHTML=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),300); },3000);
+}
+
+// ── Master update ─────────────────────────────────────────
+function updateAll(){
+  renderStats();
+  renderDaySelector();
+  renderTimeline();
+  renderScheduleList();
+  renderFormDaySelector();
+}
+
+// ── Init ──────────────────────────────────────────────────
+function init(){
+  loadData();
+  populateTimeSelects();
+  populateBuildings();
+  populateBuildingGrid();
+  renderDietaryModal();
+  renderFormDaySelector();
+  updateAll();
+}
+
+init();
+</script>
+</body>
+</html>
